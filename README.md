@@ -61,6 +61,9 @@ Usage of ./spigo:
     	Polling interval for Eureka name service, increase for large populations (default "1s")
   -w int
     	Wide area regions to replicate architecture into, defaults based on 6 AWS region names (default 1)
+  -statsd Enable sending metrics to StatsD
+  -graphite Enable sending metrics to Graphite
+
 ```
 
 
