@@ -63,6 +63,12 @@ type Configuration struct {
 
 	// Keys and values for configuring services, passed in as one string
 	Keyvals string `json:"keyvals"`
+
+	// GraphiteEnabled if true, send metrics to Graphite
+	GraphiteEnabled bool `json:"graphiteenabled"`
+
+	// StatsDEnabled if true, send metrics to StatsD
+	StatsdEnabled bool `json:"statsdenabled"`
 }
 
 // Conf data instance

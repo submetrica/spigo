@@ -5,8 +5,8 @@
     "victim": "",
     "services": [
         { "name": "rds-mysql",     "package": "store",       "count": 2,  "regions": 1, "dependencies": [] },
-	{ "name": "memcache",      "package": "store",       "count": 1,  "regions": 1, "dependencies": [] },
-        { "name": "webserver",     "package": "monolith",    "count": 18, "regions": 1, "dependencies": ["memcache", "rds-mysql"] },
+	{ "name": "memcache",      "package": "store",       "count": 2,  "regions": 1, "dependencies": [] },
+        { "name": "webserver",     "package": "monolith",    "count": 4, "regions": 1, "dependencies": ["memcache", "rds-mysql"] },
         { "name": "webserver-elb", "package": "elb",         "count": 0,  "regions": 1, "dependencies": ["webserver"] },
         { "name": "www",           "package": "denominator", "count": 0,  "regions": 0, "dependencies": ["webserver-elb"] }
     ]

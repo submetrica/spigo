@@ -12,7 +12,9 @@ import (
 	"github.com/adrianco/spigo/tooling/flow"         // flow logging
 	"github.com/adrianco/spigo/tooling/fsm"          // fsm and pirates
 	"github.com/adrianco/spigo/tooling/gotocol"      // message protocol spec
-	"github.com/adrianco/spigo/tooling/migration"    // migration from LAMP to netflixoss
+	"github.com/adrianco/spigo/tooling/graphite"
+	"github.com/adrianco/spigo/tooling/migration" // migration from LAMP to netflixoss
+	"github.com/adrianco/spigo/tooling/statsd"
 	"log"
 	"os"
 	"runtime"
@@ -20,7 +22,7 @@ import (
 	"time"
 )
 
-var reload, graphmlEnabled, graphjsonEnabled, neo4jEnabled bool
+var reload, graphmlEnabled, graphjsonEnabled, neo4jEnabled, graphiteEnabled, statsdEnabled bool
 var duration, cpucount int
 
 // main handles command line flags and starts up an architecture
@@ -40,6 +42,8 @@ func main() {
 	flag.StringVar(&archaius.Conf.Keyvals, "kv", "", "Configuration key:value - chat:10ms sets default message insert rate")
 	flag.BoolVar(&archaius.Conf.Filter, "f", false, "Filter output names to simplify graph by collapsing instances to services")
 	flag.IntVar(&cpucount, "cpus", runtime.NumCPU(), "Number of CPUs for Go runtime")
+	flag.BoolVar(&graphiteEnabled, "graphite", false, "Enable sending metrics to Graphite")
+	flag.BoolVar(&statsdEnabled, "statsd", false, "Enable sending metrics to StatsD")
 	runtime.GOMAXPROCS(cpucount)
 	var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
 	var confFile = flag.String("config", "", "Config file to read from json_arch/<config>_conf.json. This config overrides any other command-line arguments.")
@@ -85,6 +89,50 @@ func main() {
 		}
 		// make a big buffered channel so logging can start before edda is scheduled
 		edda.Logchan = make(chan gotocol.Message, 1000)
+	}
+	if graphiteEnabled {
+		graphiteUrl := os.Getenv("GRAPHITEURL")
+		graphitePort := os.Getenv("GRAPHITEPORT")
+
+		if graphiteUrl == "" {
+			log.Fatal("Graphite requires GRAPHITEURL to be set")
+		}
+		if graphitePort == "" {
+			graphitePort = "2003"
+			log.Printf("Using default Graphite port %s. Use GRAPHITEPORT environment variable to "+
+				"set Graphite port", graphitePort)
+		}
+		graphitePrefix := os.Getenv("GRAPHITEPREFIX")
+
+		err := graphite.Setup(graphiteUrl, graphitePort, graphitePrefix)
+		if err != nil {
+			log.Fatal(err)
+		}
+		archaius.Conf.GraphiteEnabled = true
+		log.Println("Metrics will be sent to Graphite at %s:%s with prefix %s", graphiteUrl, graphitePort,
+			graphitePrefix)
+	}
+	if statsdEnabled {
+		statsdUrl := os.Getenv("STATSDURL")
+		statsdPort := os.Getenv("STATSDPORT")
+
+		if statsdUrl == "" {
+			log.Fatal("Graphite requires STATSDURL to be set")
+		}
+		if statsdPort == "" {
+			statsdPort = "8125"
+			log.Printf("Using default StatsD port %s. Use STATSDPORT environment variable to "+
+				"set StatsD port", statsdPort)
+		}
+		statsdApiKey := os.Getenv("STATSDAPIKEY")
+
+		err := statsd.Setup(statsdUrl, statsdPort, statsdApiKey)
+		if err != nil {
+			log.Fatal(err)
+		}
+		archaius.Conf.StatsdEnabled = true
+		log.Println("Metrics will be sent to StatsD at %s:%s with apikey %s", statsdUrl, statsdPort,
+			statsdApiKey)
 	}
 	archaius.Conf.RunDuration = time.Duration(duration) * time.Second
 

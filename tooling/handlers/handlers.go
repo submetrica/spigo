@@ -9,6 +9,8 @@ import (
 	"github.com/adrianco/spigo/tooling/ribbon"
 	"log"
 	"time"
+
+	"github.com/adrianco/spigo/tooling/statsd"
 )
 
 // DebugContext turns on debug context logging for eureka and edda messages
@@ -79,6 +81,7 @@ func Put(msg gotocol.Message, name string, listener chan gotocol.Message, reques
 	}
 	outmsg := gotocol.Message{gotocol.Put, listener, time.Now(), msg.Ctx.NewParent(), msg.Intention}
 	flow.AnnotateSend(outmsg, name)
+	statsd.Counter("Put", names.GetTagsFromName(name), 1)
 	outmsg.GoSend(c)
 }
 
@@ -91,6 +94,7 @@ func GetRequest(msg gotocol.Message, name string, listener chan gotocol.Message,
 	}
 	outmsg := gotocol.Message{gotocol.GetRequest, listener, time.Now(), msg.Ctx.NewParent(), msg.Intention}
 	flow.AnnotateSend(outmsg, name)
+	statsd.Counter("GetRequest", names.GetTagsFromName(name), 1)
 	(*requestor)[outmsg.Ctx.Route()] = msg.Route() // remember where to respond to when this span comes back
 	outmsg.GoSend(c)
 }
@@ -102,6 +106,7 @@ func GetResponse(msg gotocol.Message, name string, listener chan gotocol.Message
 	if r.ResponseChan != nil {
 		outmsg := gotocol.Message{gotocol.GetResponse, listener, time.Now(), r.Ctx, msg.Intention}
 		flow.AnnotateSend(outmsg, name)
+		statsd.Counter("GetResponse", names.GetTagsFromName(name), 1)
 		outmsg.GoSend(r.ResponseChan)
 		delete(*requestor, ctr)
 	}
