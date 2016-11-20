@@ -31,6 +31,23 @@ func Splitter(name string, offset hier) string {
 	return ""
 }
 
+func GetTagsFromName(name string) map[string]string {
+	tags := make(map[string]string)
+	tags["region"] = Region(name)
+	tags["arch"] = Arch(name)
+	tags["container"] = Container(name)
+	tags["AMI"] = AMI(name)
+	tags["instance"] = Instance(name)
+	tags["machine"] = Machine(name)
+	tags["regionzone"] = RegionZone(name)
+	tags["process"] = Process(name)
+	tags["package"] = Package(name)
+	tags["zone"] = Zone(name)
+	tags["service"] = Service(name)
+
+	return tags
+}
+
 // Filters for different use cases
 const (
 	FilterDefault   = "*..*.*.*.*"

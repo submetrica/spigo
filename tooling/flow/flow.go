@@ -9,6 +9,8 @@ import (
 	"github.com/adrianco/spigo/tooling/dhcp"
 	"github.com/adrianco/spigo/tooling/gotocol"
 	"github.com/adrianco/spigo/tooling/graphneo4j"
+	"github.com/adrianco/spigo/tooling/names"
+	"github.com/adrianco/spigo/tooling/statsd"
 	"github.com/go-kit/kit/metrics/generic"
 	"log"
 	"os"
@@ -304,6 +306,7 @@ func Flush(t gotocol.TraceContextType, trace []*spannotype) {
 func Instrument(msg gotocol.Message, name string, hist *generic.Histogram) {
 	received := time.Now()
 	collect.Measure(hist, received.Sub(msg.Sent))
+	statsd.TimingDuration("RequestDuration", names.GetTagsFromName(name), received.Sub(msg.Sent))
 	if archaius.Conf.Msglog {
 		log.Printf("%v: %v\n", name, msg)
 	}

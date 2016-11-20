@@ -11,6 +11,7 @@ import (
 	"github.com/adrianco/spigo/tooling/handlers"
 	"github.com/adrianco/spigo/tooling/names"
 	"github.com/adrianco/spigo/tooling/ribbon"
+	"github.com/adrianco/spigo/tooling/statsd"
 	"time"
 )
 
@@ -50,6 +51,7 @@ func Start(listener chan gotocol.Message) {
 				// return any stored value for this key
 				outmsg := gotocol.Message{gotocol.GetResponse, listener, time.Now(), msg.Ctx, store[msg.Intention]}
 				flow.AnnotateSend(outmsg, name)
+				statsd.Counter("GetRequest", names.GetTagsFromName(name), 1)
 				outmsg.GoSend(msg.ResponseChan)
 			case gotocol.GetResponse:
 				// return path from a request, send payload back up (not currently used)
@@ -59,6 +61,7 @@ func Start(listener chan gotocol.Message) {
 				fmt.Sscanf(msg.Intention, "%s%s", &key, &value)
 				if key != "" && value != "" {
 					store[key] = value
+					statsd.Counter("Put", names.GetTagsFromName(name), 1)
 					// duplicate the request on to all connected store nodes with the same package name as this one
 					for _, n := range microservices.All(names.Package(name)).Names() {
 						outmsg := gotocol.Message{gotocol.Replicate, listener, time.Now(), msg.Ctx.NewParent(), msg.Intention}
